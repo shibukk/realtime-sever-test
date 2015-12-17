@@ -2,34 +2,80 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>realtime server test</title>
 </head>
 <body>
-  <input id="message" type="text"><button id="send">send</button>
-  <div id="output"></div>
+  <canvas id="canvas" width=320 height=400></canvas>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
 (function() {
   var socket = io();
-  var output = document.getElementById('output');
-  var send = document.getElementById('send');
+  var canvas = document.getElementById("canvas");
+  var one = canvas.getContext("2d");
+  var other = null;
+  var x = 100;
+  var y = 100;
+  var otherX = 200;
+  var otherY = 200;
+  var loginFlg = false;
+  var id = Math.random();
 
-  function log(e, msg) {
-    return '<div>' + e + ':' + msg + '</div>';
-  }
+  setOneCircle();
+  socket.emit('login', {id: id});
 
-  send.addEventListener('click', function() {
-    var message = document.getElementById('message').value;
-    if (message) {
-      socket.emit('new message', message);
-      output.innerHTML += log('send', message);
+  socket.on('login', function (data) {
+    setOneCircle();
+    if (id != data.id) {
+      other = canvas.getContext("2d");
+      setOtherCircle();
+    }
+
+    if (loginFlg == false) {
+      loginFlg = true;
+      socket.emit('login', {id: id});
     }
   });
 
-  socket.on('new message', function (data) {
-    output.innerHTML += log('send', data.message);
+  socket.on('move', function (data) {
+    otherX = data.x;
+    otherY = data.y;
+
+    setOneCircle();
+    setOtherCircle();
   });
+
+  document.addEventListener("touchend", function(e) {
+    x = e.changedTouches[0].pageX;
+    y = e.changedTouches[0].pageY;
+
+    setOneCircle();
+    setOtherCircle();
+    socket.emit('move', {x: x, y: y});
+
+    if ((x <= otherX + 20 && x >= otherX -20) && (y <= otherY + 20 && y >= otherY -20)) {
+      socket.emit('on', {id: id});
+    }
+  });
+
+  function setOneCircle() {
+    one.clearRect(0, 0, canvas.width, canvas.height);
+    one.beginPath();
+    one.fillStyle = 'rgb(0, 0, 255)';
+    one.arc(x, y, 20, 0, Math.PI*2, true);
+    one.fill();
+  }
+
+  function setOtherCircle() {
+    if (other == null) {
+      return;
+    }
+    other.beginPath();
+    other.fillStyle = 'rgb(255, 0, 0)';
+    other.arc(otherX, otherY, 20, 0, Math.PI*2, true);
+    other.fill();
+  }
 }());
   </script>
 </body>
