@@ -1,0 +1,10 @@
+{
+  "name": "realtime-server-test",
+  "version": "0.0.1",
+  "description": "",
+  "dependencies" :
+  {
+    "websocket" : "~1.0.22",
+    "amqp" : "0.2.4"
+  }
+}
