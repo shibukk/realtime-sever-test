@@ -1,35 +1,21 @@
-var http = require('http');
-var WSServer = require('websocket').server;
+var express = require('express');
+var app = express();
+var server = require('http').createServer(app);
+var io = require('socket.io')(server);
+var port = process.env.PORT || 8080;
 
-var url = require('url');
-var clientHtml = require('fs').readFileSync('sample.html');
+server.listen(port, function () {
+  console.log('Server listening at port %d', port);
+});
 
-var plainHttpServer = http.createServer(function(req, res) {
-  res.writeHead(200, { 'Content-Type': 'text/html'});
-  res.end(clientHtml);
-}).listen(8080);
+app.use(express.static(__dirname + '/public'));
 
-var webSocketServer = new WSServer({httpServer: plainHttpServer});
-var accept = ['localhost', '127.0.0.1', '192.168.11.117'];
-
-webSocketServer.on('request', function (req) {
-  req.origin = req.origin || '*';
-  if (accept.indexOf(url.parse(req.origin).hostname) === -1) {
-    req.reject();
-    console.log(req.origin + ' access not allowed.');
-    return;
-  }
-
-  var websocket = req.accept(null, req.origin);
-
-  websocket.on('message', function(msg) {
-    console.log('"' + msg.utf8Data + '" is recieved from ' + req.origin + '!');
-    if (msg.utf8Data === 'Hello') {
-      websocket.send('sended from WebSocket Server');
-    }
+io.on('connection', function(socket){
+  socket.on('new message', function (data) {
+    socket.broadcast.emit('new message', {
+      message: data
+    });
+    console.log(data);
   });
-
-  websocket.on('close', function (code,desc) {
-    console.log('connection released! :' + code + ' - ' + desc);
-  });
+  socket.on('disconnect', function(){});
 });

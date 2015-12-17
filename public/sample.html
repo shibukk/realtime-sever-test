@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>realtime server test</title>
+</head>
+<body>
+  <input id="message" type="text"><button id="send">send</button>
+  <div id="output"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+(function() {
+  var socket = io();
+  var output = document.getElementById('output');
+  var send = document.getElementById('send');
+
+  function log(e, msg) {
+    return '<div>' + e + ':' + msg + '</div>';
+  }
+
+  send.addEventListener('click', function() {
+    var message = document.getElementById('message').value;
+    if (message) {
+      socket.emit('new message', message);
+      output.innerHTML += log('send', message);
+    }
+  });
+
+  socket.on('new message', function (data) {
+    output.innerHTML += log('send', data.message);
+  });
+}());
+  </script>
+</body>
+</html>
